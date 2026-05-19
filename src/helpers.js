@@ -8,20 +8,17 @@ const WINNING_COMBINATIONS = [
   [0, 4, 8],
   [2, 4, 6],
 ];
-
 export const checkWinner = (board) => {
   const winningCombination = WINNING_COMBINATIONS.find(
     ([firstIndex, secondIndex, thirdIndex]) => {
-      const firstCell = board[firstIndex];
-
+      const firstCellValue = board[firstIndex];
       return (
-        firstCell &&
-        firstCell === board[secondIndex] &&
-        firstCell === board[thirdIndex]
+        firstCellValue &&
+        firstCellValue === board[secondIndex] &&
+        firstCellValue === board[thirdIndex]
       );
     },
   );
-
   return winningCombination ? board[winningCombination[0]] : null;
 };
 
