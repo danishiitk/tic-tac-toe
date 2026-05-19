@@ -1,0 +1,22 @@
+.app {
+  margin-top: 50px;
+  text-align: center;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 50px);
+  grid-template-rows: repeat(3, 50px);
+  gap: 0px;
+  justify-content: center;
+  margin: 20px auto;
+}
+
+.cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid black;
+  font-size: 24px;
+  cursor: pointer;
+}
