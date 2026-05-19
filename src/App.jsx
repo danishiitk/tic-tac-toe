@@ -29,6 +29,11 @@ const App = () => {
     setCurrentPlayer(currentPlayer === Player.O ? Player.X : Player.O);
   };
 
+  const handleReset = () => {
+    setBoard(emptyBoard);
+    setCurrentPlayer(Player.O);
+  };
+
   const statusMessage = winner
     ? `Player ${winner} has won`
     : draw
@@ -50,6 +55,9 @@ const App = () => {
           </button>
         ))}
       </div>
+      <button className="reset-button" onClick={handleReset}>
+        Reset
+      </button>
     </div>
   );
 };
