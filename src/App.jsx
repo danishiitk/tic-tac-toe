@@ -1,54 +1,67 @@
 import { useState } from "react";
-import { isOWinner, isXWinner } from "./helpers";
+import { createEmptyBoard, Player } from "./constants";
+import { checkWinner, isBoardFull } from "./helpers";
 import "./App.css";
-import { initialGrid, Player } from "./constanst";
+
 function App() {
-  const [grid, setGrid] = useState(initialGrid);
-  const [player, setPlayer] = useState(Player.O);
-  const reset = () => {
-    setGrid(initialGrid);
-    setPlayer(Player.O);
+  const [board, setBoard] = useState(createEmptyBoard);
+  const [currentPlayer, setCurrentPlayer] = useState(Player.O);
+
+  const winner = checkWinner(board);
+  const hasDraw = !winner && isBoardFull(board);
+  const isGameOver = Boolean(winner) || hasDraw;
+
+  const resetGame = () => {
+    setBoard(createEmptyBoard());
+    setCurrentPlayer(Player.O);
   };
-  const handleCellClick = (index) => {
-    if (grid[index]) {
+
+  const handleCellClick = (cellIndex) => {
+    if (board[cellIndex] || isGameOver) {
       return;
     }
-    const newGrid = [...grid];
-    newGrid[index] = player;
-    if (player === Player.O) {
-      const hasOWon = isOWinner(newGrid);
-      if (hasOWon) {
-        alert("Player O wins!");
-        reset();
-        return;
-      }
-    } else {
-      const hasXWon = isXWinner(newGrid);
-      if (hasXWon) {
-        alert("Player X wins!");
-        reset();
-        return;
-      }
+
+    const newBoard = [...board];
+    newBoard[cellIndex] = currentPlayer;
+    setBoard(newBoard);
+
+    if (checkWinner(newBoard) || isBoardFull(newBoard)) {
+      return;
     }
-    setGrid(newGrid);
-    setPlayer(player === Player.O ? Player.X : Player.O);
+
+    setCurrentPlayer(currentPlayer === Player.O ? Player.X : Player.O);
   };
+
+  const statusMessage = winner
+    ? `Player ${winner} wins!`
+    : hasDraw
+      ? "It's a draw!"
+      : `Player ${currentPlayer}'s turn`;
+
   return (
     <div className="app">
       <h1>Tic Tac Toe</h1>
-      <div className="grid">
-        {grid.map((cellItem, cellIndex) => (
-          <div
+
+      <p className="status">{statusMessage}</p>
+
+      <div className="grid" role="grid" aria-label="Tic tac toe board">
+        {board.map((cellValue, cellIndex) => (
+          <button
             key={cellIndex}
             className="cell"
+            type="button"
             onClick={() => handleCellClick(cellIndex)}
+            disabled={Boolean(cellValue) || isGameOver}
+            aria-label={`Cell ${cellIndex + 1}${cellValue ? `, ${cellValue}` : ""}`}
           >
-            {cellItem}
-          </div>
+            {cellValue}
+          </button>
         ))}
       </div>
-      <p>Player {player === Player.O ? Player.O : Player.X}'s Turn</p>
-      <button onClick={reset}>Reset</button>
+
+      <button className="reset-button" type="button" onClick={resetGame}>
+        Reset
+      </button>
     </div>
   );
 }
