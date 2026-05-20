@@ -1,0 +1,266 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function playerValues() {
+      return ['O', 'X'];
+    }
+
+    function roomStatuses() {
+      return ['waiting', 'active', 'finished', 'abandoned'];
+    }
+
+    function validCell(value) {
+      return value in ['', 'O', 'X'];
+    }
+
+    function validBoard(board) {
+      return board is list
+        && board.size() == 9
+        && validCell(board[0])
+        && validCell(board[1])
+        && validCell(board[2])
+        && validCell(board[3])
+        && validCell(board[4])
+        && validCell(board[5])
+        && validCell(board[6])
+        && validCell(board[7])
+        && validCell(board[8]);
+    }
+
+    function emptyBoard(board) {
+      return board == ['', '', '', '', '', '', '', '', ''];
+    }
+
+    function validPlayerRecord(player) {
+      return player is map
+        && player.keys().hasOnly(['uid', 'name', 'connected', 'lastSeen'])
+        && player.uid is string
+        && player.uid.size() > 0
+        && player.name is string
+        && player.name.size() > 0
+        && player.name.size() <= 24
+        && player.connected is bool
+        && player.lastSeen is timestamp;
+    }
+
+    function validPlayers(players) {
+      return players is map
+        && players.keys().hasAll(['O', 'X'])
+        && players.keys().hasOnly(['O', 'X'])
+        && validPlayerRecord(players.O)
+        && (players.X == null || validPlayerRecord(players.X));
+    }
+
+    function validRoom(room) {
+      return room.keys().hasAll([
+          'board',
+          'currentPlayer',
+          'players',
+          'status',
+          'winner',
+          'createdAt',
+          'updatedAt'
+        ])
+        && room.keys().hasOnly([
+          'board',
+          'currentPlayer',
+          'players',
+          'status',
+          'winner',
+          'createdAt',
+          'updatedAt'
+        ])
+        && validBoard(room.board)
+        && room.currentPlayer in playerValues()
+        && validPlayers(room.players)
+        && room.status in roomStatuses()
+        && (room.winner == null || room.winner in ['O', 'X', 'draw']);
+    }
+
+    function changedOnlyCell(index) {
+      return (index == 0 || request.resource.data.board[0] == resource.data.board[0])
+        && (index == 1 || request.resource.data.board[1] == resource.data.board[1])
+        && (index == 2 || request.resource.data.board[2] == resource.data.board[2])
+        && (index == 3 || request.resource.data.board[3] == resource.data.board[3])
+        && (index == 4 || request.resource.data.board[4] == resource.data.board[4])
+        && (index == 5 || request.resource.data.board[5] == resource.data.board[5])
+        && (index == 6 || request.resource.data.board[6] == resource.data.board[6])
+        && (index == 7 || request.resource.data.board[7] == resource.data.board[7])
+        && (index == 8 || request.resource.data.board[8] == resource.data.board[8]);
+    }
+
+    function validMoveAt(index) {
+      return resource.data.board[index] == ''
+        && request.resource.data.board[index] == resource.data.currentPlayer
+        && changedOnlyCell(index);
+    }
+
+    function hasOneValidMove() {
+      return validMoveAt(0)
+        || validMoveAt(1)
+        || validMoveAt(2)
+        || validMoveAt(3)
+        || validMoveAt(4)
+        || validMoveAt(5)
+        || validMoveAt(6)
+        || validMoveAt(7)
+        || validMoveAt(8);
+    }
+
+    function samePlayers() {
+      return request.resource.data.players == resource.data.players;
+    }
+
+    function userIsPlayer() {
+      return resource.data.players.O.uid == request.auth.uid
+        || (resource.data.players.X != null
+          && resource.data.players.X.uid == request.auth.uid);
+    }
+
+    function userIsCurrentPlayer() {
+      return resource.data.players[resource.data.currentPlayer].uid == request.auth.uid;
+    }
+
+    function createsWaitingRoom() {
+      return request.resource.data.players.O.uid == request.auth.uid
+        && request.resource.data.players.X == null
+        && emptyBoard(request.resource.data.board)
+        && request.resource.data.currentPlayer == 'O'
+        && request.resource.data.status == 'waiting'
+        && request.resource.data.winner == null;
+    }
+
+    function joinsAsX() {
+      return resource.data.players.X == null
+        && request.resource.data.players.O == resource.data.players.O
+        && validPlayerRecord(request.resource.data.players.X)
+        && request.resource.data.players.X.uid == request.auth.uid
+        && request.resource.data.board == resource.data.board
+        && request.resource.data.currentPlayer == resource.data.currentPlayer
+        && request.resource.data.status == 'active'
+        && request.resource.data.winner == resource.data.winner;
+    }
+
+    function playsTurn() {
+      return resource.data.status == 'active'
+        && resource.data.winner == null
+        && userIsCurrentPlayer()
+        && samePlayers()
+        && hasOneValidMove()
+        && request.resource.data.status in ['active', 'finished']
+        && (request.resource.data.status == 'finished'
+          || request.resource.data.currentPlayer != resource.data.currentPlayer)
+        && (request.resource.data.winner == null
+          || request.resource.data.winner in ['O', 'X', 'draw']);
+    }
+
+    function startsNewRound() {
+      return resource.data.status == 'finished'
+        && userIsPlayer()
+        && samePlayers()
+        && emptyBoard(request.resource.data.board)
+        && request.resource.data.currentPlayer == 'O'
+        && request.resource.data.status == 'active'
+        && request.resource.data.winner == null;
+    }
+
+    function unchangedGameData() {
+      return request.resource.data.board == resource.data.board
+        && request.resource.data.currentPlayer == resource.data.currentPlayer
+        && request.resource.data.winner == resource.data.winner
+        && request.resource.data.createdAt == resource.data.createdAt;
+    }
+
+    function samePlayerIdentity(player) {
+      return request.resource.data.players[player].uid == resource.data.players[player].uid
+        && request.resource.data.players[player].name == resource.data.players[player].name;
+    }
+
+    function validPresencePatch(player) {
+      return request.resource.data.players[player].connected is bool
+        && request.resource.data.players[player].lastSeen is timestamp
+        && request.resource.data.players[player].keys().hasOnly([
+          'uid',
+          'name',
+          'connected',
+          'lastSeen'
+        ]);
+    }
+
+    function unchangedOtherPlayer(player) {
+      return (player == 'O' && request.resource.data.players.X == resource.data.players.X)
+        || (player == 'X' && request.resource.data.players.O == resource.data.players.O);
+    }
+
+    function statusIsPresenceSafe() {
+      return request.resource.data.status == resource.data.status
+        || request.resource.data.status == 'abandoned';
+    }
+
+    function updatesOwnPresence(player) {
+      return resource.data.players[player] != null
+        && resource.data.players[player].uid == request.auth.uid
+        && request.resource.data.keys().hasOnly([
+          'board',
+          'currentPlayer',
+          'players',
+          'status',
+          'winner',
+          'createdAt',
+          'updatedAt'
+        ])
+        && request.resource.data.players.keys().hasAll(['O', 'X'])
+        && request.resource.data.players.keys().hasOnly(['O', 'X'])
+        && unchangedGameData()
+        && statusIsPresenceSafe()
+        && unchangedOtherPlayer(player)
+        && samePlayerIdentity(player)
+        && validPresencePatch(player);
+    }
+
+    function updatesPresenceAsO() {
+      return updatesOwnPresence('O')
+        && request.resource.data.status == resource.data.status;
+    }
+
+    function updatesPresenceAsX() {
+      return updatesOwnPresence('X')
+        && request.resource.data.status == resource.data.status;
+    }
+
+    function leavesAsO() {
+      return updatesOwnPresence('O')
+        && request.resource.data.players.O.connected == false;
+    }
+
+    function leavesAsX() {
+      return updatesOwnPresence('X')
+        && request.resource.data.players.X.connected == false;
+    }
+
+    function updatesPresenceOrLeaves() {
+      return updatesPresenceAsO()
+        || updatesPresenceAsX()
+        || leavesAsO()
+        || leavesAsX();
+    }
+
+    match /rooms/{roomId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && validRoom(request.resource.data)
+        && createsWaitingRoom();
+      allow update: if signedIn()
+        && ((validRoom(request.resource.data) && (joinsAsX()
+          || playsTurn()
+          || startsNewRound()))
+          || updatesPresenceOrLeaves());
+      allow delete: if false;
+    }
+  }
+}

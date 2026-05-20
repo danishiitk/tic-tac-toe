@@ -1,10 +1,17 @@
 .app {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   min-height: 100vh;
   padding: 48px 20px;
   text-align: center;
   color: #1f2937;
   background: #f7f7fb;
   box-sizing: border-box;
+}
+
+.panel {
+  width: min(100%, 520px);
 }
 
 .app h1 {
@@ -17,6 +24,141 @@
   margin: 16px 0 0;
   font-size: 1.125rem;
   font-weight: 600;
+}
+
+.error {
+  margin: 12px auto 0;
+  color: #b42318;
+  font-weight: 700;
+}
+
+.join-form {
+  margin: 24px auto 0;
+  text-align: left;
+}
+
+.join-form label,
+.detail-label {
+  display: block;
+  margin-bottom: 6px;
+  color: #4b5563;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.join-row {
+  display: flex;
+  gap: 10px;
+}
+
+.join-row input {
+  flex: 1;
+  min-width: 0;
+  border: 2px solid #cfd6e3;
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: #111827;
+  background: #ffffff;
+  font: inherit;
+}
+
+.join-row input:focus {
+  border-color: #8fb3ff;
+  outline: 3px solid #dbe7ff;
+}
+
+.join-row button,
+.secondary-button,
+.leave-button {
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: #ffffff;
+  background: #273449;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.join-row button:disabled,
+.secondary-button:disabled,
+.reset-button:disabled,
+.leave-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.room-details,
+.players {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  align-items: center;
+  margin: 24px auto 0;
+  text-align: left;
+}
+
+.room-details > div,
+.player {
+  min-height: 64px;
+  border: 2px solid #d7ddea;
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #ffffff;
+}
+
+.room-details strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.players {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.player {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.player span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: #ffffff;
+  background: #273449;
+  font-weight: 800;
+}
+
+.player strong {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.player em {
+  border-radius: 999px;
+  padding: 3px 7px;
+  color: #7a271a;
+  background: #fff1ed;
+  font-size: 0.75rem;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.player.active {
+  border-color: #4f7cff;
+  background: #edf2ff;
 }
 
 .grid {
@@ -65,9 +207,47 @@
   cursor: pointer;
 }
 
+.leave-button {
+  display: block;
+  margin: 12px auto 0;
+  color: #273449;
+  background: #e5e9f2;
+}
+
 .reset-button:hover,
-.reset-button:focus-visible {
+.reset-button:focus-visible,
+.join-row button:hover:not(:disabled),
+.join-row button:focus-visible,
+.secondary-button:hover:not(:disabled),
+.secondary-button:focus-visible,
+.leave-button:hover:not(:disabled),
+.leave-button:focus-visible {
   background: #111827;
   outline: 3px solid #8fb3ff;
   outline-offset: 2px;
+}
+
+.leave-button:hover:not(:disabled),
+.leave-button:focus-visible {
+  color: #ffffff;
+}
+
+@media (max-width: 540px) {
+  .app {
+    padding: 28px 16px;
+  }
+
+  .join-row,
+  .room-details {
+    grid-template-columns: 1fr;
+  }
+
+  .join-row {
+    flex-direction: column;
+  }
+
+  .room-details,
+  .players {
+    text-align: left;
+  }
 }

@@ -6,3 +6,10 @@ export const Player = {
   O: "O",
   X: "X",
 };
+
+export const RoomStatus = {
+  WAITING: "waiting",
+  ACTIVE: "active",
+  FINISHED: "finished",
+  ABANDONED: "abandoned",
+};
